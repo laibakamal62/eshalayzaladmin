@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
-
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch("http://localhost:3001/api/admin");
+        const res = await fetch(`${baseURL}/api/admin`);
         const data = await res.json();
         setOrders(data.orders || []);
       } catch (err) {
