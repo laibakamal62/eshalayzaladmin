@@ -1,5 +1,4 @@
-'use client';
-
+"use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -84,9 +83,9 @@ export default function CategoryPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Categories</h2>
+    <div className="p-4 sm:ml-64 md:ml-80 min-h-screen bg-gray-50">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0 mt-4">Categories</h2>
         <button
           onClick={() => {
             setIsEditing(false);
@@ -94,65 +93,141 @@ export default function CategoryPage() {
             setImage(null);
             setShowModal(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 bg-[#7C3AED] text-white rounded-full shadow hover:bg-[#6A2FCC] transition-colors"
         >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
           Add Category
         </button>
       </div>
 
-      {/* Table */}
-      <div className="ml-64 p-4">
-        <h2 className="text-xl font-bold mb-4">Product Categories</h2>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="text-left p-2">Image</th>
-              <th className="text-left p-2">Name</th>
-              <th className="text-left p-2">Actions</th>
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto rounded-xl shadow-lg bg-white">
+        <table className="min-w-full">
+          <thead className="bg-purple-100 text-gray-700 text-left text-sm">
+            <tr>
+              <th className="p-4">Image</th>
+              <th className="p-4">Name</th>
+              <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {categories.map((cat) => (
-              <tr key={cat._id} className="border-t">
-                <td className="p-2">
-                  <img
-                    src={`/${cat.image}`}
-                    alt={cat.name}
-                    className="h-12 w-12 object-cover rounded"
-                  />
-                </td>
-                <td className="p-2">{cat.name}</td>
-                <td className="p-2">
-                  <button
-                    className="bg-yellow-500 text-white px-3 py-1 rounded mr-2"
-                    onClick={() => handleEditClick(cat)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-600 text-white px-3 py-1 rounded"
-                    onClick={() => handleDeleteClick(cat._id)}
-                  >
-                    Delete
-                  </button>
+          <tbody className="text-sm text-gray-800">
+            {categories.length > 0 ? (
+              categories.map((cat) => (
+                <tr key={cat._id} className="border-b hover:bg-gray-50">
+                  <td className="p-4">
+                    <img
+                      src={`/${cat.image}`}
+                      alt={cat.name}
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                  </td>
+                  <td className="p-4 font-semibold">{cat.name}</td>
+                  <td className="p-4 text-right space-x-2">
+                    <button
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => handleEditClick(cat)}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => handleDeleteClick(cat._id)}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M3 7h18"
+                        />
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="3" className="text-center py-6 text-gray-500">
+                  Let's add some categories to get started!
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden grid gap-4">
+        {categories.length > 0 ? (
+          categories.map((cat) => (
+            <div key={cat._id} className="bg-white rounded-xl shadow-lg p-4">
+              <div className="flex gap-4">
+                <img
+                  src={`/${cat.image}`}
+                  alt={cat.name}
+                  className="h-16 w-16 object-cover rounded"
+                />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{cat.name}</h3>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  className="text-blue-600 hover:text-blue-800"
+                  onClick={() => handleEditClick(cat)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  className="text-red-600 hover:text-red-800"
+                  onClick={() => handleDeleteClick(cat._id)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4M3 7h18"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-6 text-gray-500">
+            Let's add some categories to get started!
+          </div>
+        )}
+      </div>
+
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold mb-4">
               {isEditing ? 'Edit Category' : 'Add New Category'}
             </h3>
             <input
               type="text"
               placeholder="Category Name"
-              className="w-full border p-2 mb-4"
+              className="w-full border p-2 rounded mb-4"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -162,15 +237,15 @@ export default function CategoryPage() {
               onChange={(e) => setImage(e.target.files[0])}
               accept="image/*"
             />
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
               <button
-                className="bg-gray-300 px-4 py-2 rounded mr-2"
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
               <button
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                className="px-4 py-2 bg-[#7C3AED] text-white rounded hover:bg-[#6A2FCC] transition-colors"
                 onClick={handleAddCategory}
               >
                 Save
