@@ -2,8 +2,7 @@
 import { connectMade } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { NextResponse } from "next/server";
-import cloudinary from "cloudinary";
-
+import cloudinary from "@/lib/cloudinary";
 // ✅ Configure Cloudinary
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
