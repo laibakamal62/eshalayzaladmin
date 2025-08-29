@@ -1,9 +1,10 @@
+// app/api/edit-product/route.js
 import { connectMade } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { NextResponse } from "next/server";
 import cloudinary from "cloudinary";
 
-// ✅ Configure Cloudinary (uses .env variables)
+// ✅ Configure Cloudinary
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -16,15 +17,19 @@ export async function POST(req) {
   await connectMade();
 
   try {
-    // Get product ID from query
+    // ✅ Get product ID from query
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {
-      return NextResponse.json({ success: false, message: "Product ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Product ID is required" },
+        { status: 400 }
+      );
     }
 
     const formData = await req.formData();
 
+    // ✅ Collect base fields
     const updateData = {
       name: formData.get("name"),
       price: formData.get("price"),
@@ -34,7 +39,7 @@ export async function POST(req) {
       description: formData.get("description"),
     };
 
-    // ✅ Main product image
+    // ✅ Handle main product image
     const imageFile = formData.get("image");
     if (imageFile && imageFile.size > 0) {
       const buffer = Buffer.from(await imageFile.arrayBuffer());
@@ -46,22 +51,35 @@ export async function POST(req) {
           })
           .end(buffer);
       });
-      updateData.image = uploadRes.secure_url; // ✅ Cloudinary URL
+      updateData.image = uploadRes.secure_url;
     }
 
-    // ✅ Variations
-    const variations = [];
-    for (const [key, value] of formData.entries()) {
+    // ✅ Parse variation objects
+    const variationsData = [];
+    for (const key of formData.keys()) {
       if (key.startsWith("variations[")) {
-        variations.push(JSON.parse(value));
+        variationsData.push({ key, value: formData.get(key) });
       }
     }
 
-    // ✅ Variation images
-    for (const [key, value] of formData.entries()) {
-      if (key.startsWith("variationImage_") && value && value.size > 0) {
-        const index = key.split("_")[1];
-        const buffer = Buffer.from(await value.arrayBuffer());
+    // Sort variations to maintain correct order
+    variationsData.sort((a, b) => {
+      const aIndex = parseInt(a.key.match(/variations\[(\d+)\]/)[1], 10);
+      const bIndex = parseInt(b.key.match(/variations\[(\d+)\]/)[1], 10);
+      return aIndex - bIndex;
+    });
+
+    const variations = [];
+    for (const item of variationsData) {
+      const index = parseInt(item.key.match(/variations\[(\d+)\]/)[1], 10);
+      const variationObj = JSON.parse(item.value);
+
+      // Look for corresponding image file
+      const variationImageKey = `variationImage_${index}`;
+      const variationImageFile = formData.get(variationImageKey);
+
+      if (variationImageFile && variationImageFile.size > 0) {
+        const buffer = Buffer.from(await variationImageFile.arrayBuffer());
         const uploadRes = await new Promise((resolve, reject) => {
           cloudinary.v2.uploader
             .upload_stream({ folder: "products/variations" }, (err, result) => {
@@ -70,10 +88,11 @@ export async function POST(req) {
             })
             .end(buffer);
         });
-        if (variations[index]) {
-          variations[index].image = uploadRes.secure_url; // ✅ Cloudinary URL
-        }
+        variationObj.image = uploadRes.secure_url;
       }
+
+      // if no new file uploaded, keep old image (don't overwrite with empty string)
+      variations.push(variationObj);
     }
 
     updateData.variations = variations;
@@ -81,12 +100,18 @@ export async function POST(req) {
     // ✅ Update product in DB
     const updated = await Product.findByIdAndUpdate(id, updateData, { new: true });
     if (!updated) {
-      return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, message: "Product not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ success: true, product: updated });
   } catch (error) {
     console.error("Edit product error:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
   }
 }
