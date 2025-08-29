@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import Category from '@/models/Category';
 import { connectMade } from '@/lib/mongodb';
-import path from 'path';
-import fs from 'fs';
 import slugify from 'slugify';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function PUT(req) {
   try {
@@ -21,18 +26,33 @@ export async function PUT(req) {
 
     const updateData = {
       name,
-      slug: slugify(name, { lower: true, strict: true }), // regenerate slug
+      slug: slugify(name, { lower: true, strict: true }),
     };
 
     if (image && typeof image !== 'string') {
+      // Upload new image to Cloudinary
       const bytes = await image.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const uploadDir = path.join(process.cwd(), 'public/uploads/categories');
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      const uploadResult = await cloudinary.uploader.upload_stream(
+        { folder: 'categories' },
+        (error, result) => {
+          if (error) throw error;
+          return result;
+        }
+      );
 
-      const filename = `${Date.now()}-${image.name}`;
-      fs.writeFileSync(path.join(uploadDir, filename), buffer);
-      updateData.image = `uploads/categories/${filename}`;
+      // Workaround to upload buffer using a Promise
+      const streamUpload = () =>
+        new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream({ folder: 'categories' }, (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          });
+          stream.end(buffer);
+        });
+
+      const result = await streamUpload();
+      updateData.image = result.secure_url;
     }
 
     await Category.findByIdAndUpdate(id, updateData);
@@ -40,6 +60,6 @@ export async function PUT(req) {
     return NextResponse.json({ success: true, message: 'Category updated successfully' });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, message: 'Error updating category' });
+    return NextResponse.json({ success: false, message: 'Error updating category', error: error.message });
   }
 }

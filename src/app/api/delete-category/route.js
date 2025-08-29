@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import Category from '@/models/Category';
 import { connectMade } from '@/lib/mongodb';
-import path from 'path';
-import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function DELETE(req) {
   try {
@@ -19,11 +24,13 @@ export async function DELETE(req) {
       return NextResponse.json({ success: false, message: 'Category not found' });
     }
 
-    // Delete category image from uploads
+    // Optional: delete image from Cloudinary
     if (category.image) {
-      const filePath = path.join(process.cwd(), 'public', category.image);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const publicId = category.image.split('/').pop().split('.')[0]; // extract filename without extension
+      try {
+        await cloudinary.uploader.destroy(`categories/${publicId}`);
+      } catch (err) {
+        console.warn('Failed to delete image from Cloudinary:', err.message);
       }
     }
 
@@ -32,6 +39,6 @@ export async function DELETE(req) {
     return NextResponse.json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, message: 'Error deleting category' });
+    return NextResponse.json({ success: false, message: 'Error deleting category', error: error.message });
   }
 }
