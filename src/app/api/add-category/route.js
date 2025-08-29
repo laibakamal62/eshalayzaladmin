@@ -21,12 +21,18 @@ export async function POST(req) {
 
     await connectMade();
 
-    // Upload image to Cloudinary
-    const uploadResult = await cloudinary.uploader.upload(
-      Buffer.from(await image.arrayBuffer()),
-      { folder: 'categories' }
-    );
+    // Convert file to Base64 Data URI
+    const arrayBuffer = await image.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = image.type; // e.g., image/png or image/jpeg
+    const dataUri = `data:${mimeType};base64,${base64}`;
 
+    // Upload to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(dataUri, {
+      folder: 'categories',
+    });
+
+    // Save category in DB
     const newCategory = await Category.create({
       name,
       image: uploadResult.secure_url, // Cloudinary URL
@@ -39,6 +45,10 @@ export async function POST(req) {
     });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ success: false, message: 'Error adding category', error: err.message });
+    return NextResponse.json({
+      success: false,
+      message: 'Error adding category',
+      error: err.message,
+    });
   }
 }
