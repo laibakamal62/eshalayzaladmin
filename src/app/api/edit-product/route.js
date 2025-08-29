@@ -1,9 +1,9 @@
 import { connectMade } from "@/lib/mongodb";
 import Product from "@/models/Product";
 import { NextResponse } from "next/server";
-import cloudinary from "@/lib/cloudinary";
+import cloudinary from "cloudinary";
 
-// Configure Cloudinary
+// ✅ Configure Cloudinary (uses .env variables)
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -16,6 +16,7 @@ export async function POST(req) {
   await connectMade();
 
   try {
+    // Get product ID from query
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) {
@@ -33,7 +34,7 @@ export async function POST(req) {
       description: formData.get("description"),
     };
 
-    // Handle main image (upload to Cloudinary if new one provided)
+    // ✅ Main product image
     const imageFile = formData.get("image");
     if (imageFile && imageFile.size > 0) {
       const buffer = Buffer.from(await imageFile.arrayBuffer());
@@ -48,7 +49,7 @@ export async function POST(req) {
       updateData.image = uploadRes.secure_url; // ✅ Cloudinary URL
     }
 
-    // Handle variations
+    // ✅ Variations
     const variations = [];
     for (const [key, value] of formData.entries()) {
       if (key.startsWith("variations[")) {
@@ -56,7 +57,7 @@ export async function POST(req) {
       }
     }
 
-    // Upload variation images if provided
+    // ✅ Variation images
     for (const [key, value] of formData.entries()) {
       if (key.startsWith("variationImage_") && value && value.size > 0) {
         const index = key.split("_")[1];
@@ -77,7 +78,7 @@ export async function POST(req) {
 
     updateData.variations = variations;
 
-    // Update product in DB
+    // ✅ Update product in DB
     const updated = await Product.findByIdAndUpdate(id, updateData, { new: true });
     if (!updated) {
       return NextResponse.json({ success: false, message: "Product not found" }, { status: 404 });
