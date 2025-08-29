@@ -1,8 +1,13 @@
-import { writeFile } from 'fs/promises';
-import path from 'path';
 import { NextResponse } from 'next/server';
 import { connectMade } from '@/lib/mongodb';
 import Category from '@/models/Category';
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req) {
   try {
@@ -11,30 +16,20 @@ export async function POST(req) {
     const image = formData.get('image');
 
     if (!name || !image) {
-      console.log("Missing fields:", { name, image });
       return NextResponse.json({ success: false, message: 'Missing fields' });
     }
 
-    // 1. Connect to MongoDB
     await connectMade();
 
-    // 2. Prepare image buffer
-    const bytes = await image.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const imageName = `${Date.now()}-${image.name}`;
+    // Upload image to Cloudinary
+    const uploadResult = await cloudinary.uploader.upload(
+      Buffer.from(await image.arrayBuffer()),
+      { folder: 'categories' }
+    );
 
-    // 3. Ensure public/uploads folder exists
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    const imagePath = path.join(uploadDir, imageName);
-
-    // 4. Save image to public/uploads
-    console.log("Saving image to:", imagePath);
-    await writeFile(imagePath, buffer);
-
-    // 5. Save category in DB
     const newCategory = await Category.create({
       name,
-      image: `uploads/${imageName}`,
+      image: uploadResult.secure_url, // Cloudinary URL
     });
 
     return NextResponse.json({
@@ -43,11 +38,7 @@ export async function POST(req) {
       data: newCategory,
     });
   } catch (err) {
-    console.error('Full error stack:', err);
-    return NextResponse.json({
-      success: false,
-      message: 'Error adding category',
-      error: err.message,
-    });
+    console.error(err);
+    return NextResponse.json({ success: false, message: 'Error adding category', error: err.message });
   }
 }
