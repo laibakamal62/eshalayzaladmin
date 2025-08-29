@@ -207,8 +207,7 @@ export default function ProductsPage() {
                 <tr key={product._id} className="border-b hover:bg-gray-50">
                   <td className="p-4">
                     <img
-                      src={`/uploads/products/${product.image}`}
-                      alt={product.name}
+ src={product.image}                       alt={product.name}
                       className="w-16 h-16 object-cover rounded-md"
                     />
                   </td>
@@ -223,7 +222,7 @@ export default function ProductsPage() {
                         <div key={i} className="flex items-center gap-2 mb-2">
                           {v.image ? (
                             <img
-                              src={`/uploads/products/${v.image}`}
+                               src={v.image}
                               alt="Variation"
                               className="w-8 h-8 object-cover rounded"
                             />
