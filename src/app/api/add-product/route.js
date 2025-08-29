@@ -1,8 +1,7 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
 import { connectMade } from "@/lib/mongodb";
 import Product from "@/models/Product";
+import cloudinary from "@/lib/cloudinary"; // we'll create this helper
 
 export async function POST(req) {
   try {
@@ -12,20 +11,10 @@ export async function POST(req) {
     const price = formData.get("price");
     const stock = formData.get("stock");
     const category = formData.get("category");
-    const brand = formData.get("brand"); // ✅ Get brand
+    const brand = formData.get("brand");
     const image = formData.get("image");
     const description = formData.get("description");
     const variations = [];
-
-    console.log("Received formData:", {
-      name,
-      price,
-      stock,
-      category,
-      brand,
-      description,
-      image: image ? image.name : null,
-    });
 
     if (!name || !price || !stock || !category || !image) {
       return NextResponse.json({ success: false, message: "Missing required fields" });
@@ -33,14 +22,24 @@ export async function POST(req) {
 
     await connectMade();
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
-    await mkdir(uploadDir, { recursive: true });
+    // ✅ Upload main image to Cloudinary
+    const arrayBuffer = await image.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-    const mainImageBuffer = Buffer.from(await image.arrayBuffer());
-    const mainImageName = `${Date.now()}-${image.name.replace(/\s+/g, "_").toLowerCase()}`;
-    const mainImagePath = path.join(uploadDir, mainImageName);
-    await writeFile(mainImagePath, mainImageBuffer);
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "products" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      stream.end(buffer);
+    });
 
+    const mainImageUrl = uploadResult.secure_url;
+
+    // ✅ Handle variations
     const variationsData = [];
     for (const key of formData.keys()) {
       if (key.startsWith("variations[")) {
@@ -48,6 +47,7 @@ export async function POST(req) {
       }
     }
 
+    // Sort variations by index
     variationsData.sort((a, b) => {
       const aIndex = parseInt(a.key.match(/variations\[(\d+)\]/)[1], 10);
       const bIndex = parseInt(b.key.match(/variations\[(\d+)\]/)[1], 10);
@@ -62,10 +62,19 @@ export async function POST(req) {
 
       if (variationImageFile && variationImageFile.size > 0) {
         const buffer = Buffer.from(await variationImageFile.arrayBuffer());
-        const imageName = `${Date.now()}-var-${i}-${variationImageFile.name.replace(/\s+/g, "_").toLowerCase()}`;
-        const imagePath = path.join(uploadDir, imageName);
-        await writeFile(imagePath, buffer);
-        variationObj.image = imageName;
+
+        const varUpload = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "products/variations" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(buffer);
+        });
+
+        variationObj.image = varUpload.secure_url;
       } else {
         variationObj.image = "";
       }
@@ -73,13 +82,14 @@ export async function POST(req) {
       variations.push(variationObj);
     }
 
+    // ✅ Save to MongoDB
     const newProduct = await Product.create({
       name,
       price,
       stock,
       category,
-      brand, // ✅ Save brand
-      image: mainImageName,
+      brand,
+      image: mainImageUrl,
       description,
       variations,
     });
@@ -90,7 +100,7 @@ export async function POST(req) {
       product: newProduct,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Add Product Error:", err);
     return NextResponse.json({ success: false, message: err.message });
   }
 }

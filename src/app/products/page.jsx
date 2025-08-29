@@ -280,7 +280,7 @@ export default function ProductsPage() {
             <div key={product._id} className="bg-white rounded-xl shadow-lg p-4">
               <div className="flex gap-4">
                 <img
-                  src={`/uploads/products/${product.image}`}
+ src={product.image} 
                   alt={product.name}
                   className="w-20 h-20 object-cover rounded-md"
                 />
@@ -299,7 +299,7 @@ export default function ProductsPage() {
                     <div key={i} className="flex items-center gap-2 mt-2">
                       {v.image ? (
                         <img
-                          src={`/uploads/products/${v.image}`}
+                         src={product.image}
                           alt="Variation"
                           className="w-8 h-8 object-cover rounded"
                         />
@@ -463,8 +463,7 @@ export default function ProductsPage() {
                   )}
                   {!variation.imageFile && variation.image && (
                     <img
-                      src={`/uploads/products/${variation.image}`}
-                      alt="Existing"
+src={variation.image}                       alt="Existing"
                       className="w-12 h-12 object-cover rounded mt-2 sm:mt-0"
                     />
                   )}
