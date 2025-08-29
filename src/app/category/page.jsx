@@ -117,11 +117,11 @@ export default function CategoryPage() {
               categories.map((cat) => (
                 <tr key={cat._id} className="border-b hover:bg-gray-50">
                   <td className="p-4">
-                    <img
-                      src={`/${cat.image}`}
-                      alt={cat.name}
-                      className="h-12 w-12 object-cover rounded"
-                    />
+                   <img
+  src={cat.image} // use the Cloudinary URL directly
+  alt={cat.name}
+  className="h-12 w-12 object-cover rounded"
+/>
                   </td>
                   <td className="p-4 font-semibold">{cat.name}</td>
                   <td className="p-4 text-right space-x-2">
@@ -171,11 +171,12 @@ export default function CategoryPage() {
           categories.map((cat) => (
             <div key={cat._id} className="bg-white rounded-xl shadow-lg p-4">
               <div className="flex gap-4">
-                <img
-                  src={`/${cat.image}`}
-                  alt={cat.name}
-                  className="h-16 w-16 object-cover rounded"
-                />
+               <img
+  src={cat.image} // Cloudinary URL directly
+  alt={cat.name}
+  className="h-16 w-16 object-cover rounded"
+/>
+
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg">{cat.name}</h3>
                 </div>
