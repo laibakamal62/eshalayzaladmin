@@ -1,13 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function CategoryPage() {
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [image, setImage] = useState(null);
 
   useEffect(() => {
@@ -16,45 +16,45 @@ export default function CategoryPage() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch("/api/get-categories");
+      const res = await fetch('/api/get-categories');
       const data = await res.json();
       setCategories(data?.data || []);
     } catch (err) {
-      console.error("Failed to fetch categories:", err);
+      console.error('Failed to fetch categories:', err);
     }
   };
 
   const handleAddCategory = async () => {
     if (!name || (!image && !isEditing)) {
-      alert("Please fill all fields");
+      alert('Please fill all fields');
       return;
     }
 
     const formData = new FormData();
-    formData.append("name", name);
-    if (image) formData.append("image", image);
+    formData.append('name', name);
+    if (image) formData.append('image', image);
 
     try {
       let res;
       if (isEditing) {
-        res = await axios.post(`/api/edit-category?id=${selectedCategoryId}`, formData);
+        res = await axios.put(`/api/edit-category?id=${selectedCategoryId}`, formData);
       } else {
-        res = await axios.post("/api/add-category", formData);
+        res = await axios.post('/api/add-category', formData);
       }
 
       if (res.data.success) {
         setShowModal(false);
-        setName("");
+        setName('');
         setImage(null);
         setIsEditing(false);
         setSelectedCategoryId(null);
         fetchCategories();
       } else {
-        alert("Failed to save category");
+        alert('Failed to save category');
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("Error saving category");
+      console.error('Error:', error);
+      alert('Error saving category');
     }
   };
 
@@ -62,35 +62,34 @@ export default function CategoryPage() {
     setIsEditing(true);
     setSelectedCategoryId(cat._id);
     setName(cat.name);
-    setImage(null); // reset file input
+    setImage(null);
     setShowModal(true);
   };
 
   const handleDeleteClick = async (id) => {
-    if (!confirm("Are you sure you want to delete this category?")) return;
+    if (!confirm('Are you sure you want to delete this category?')) return;
+
     try {
       const res = await axios.delete(`/api/delete-category?id=${id}`);
       if (res.data.success) {
         fetchCategories();
       } else {
-        alert("Failed to delete category");
+        alert('Failed to delete category');
       }
     } catch (error) {
-      console.error("Error deleting category:", error);
-      alert("Error deleting category");
+      console.error('Error deleting category:', error);
+      alert('Error deleting category');
     }
   };
 
   return (
     <div className="p-4 sm:ml-64 md:ml-80 min-h-screen bg-gray-50">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0 mt-4">
-          Categories
-        </h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4 sm:mb-0 mt-4">Categories</h2>
         <button
           onClick={() => {
             setIsEditing(false);
-            setName("");
+            setName('');
             setImage(null);
             setShowModal(true);
           }}
@@ -119,7 +118,7 @@ export default function CategoryPage() {
                 <tr key={cat._id} className="border-b hover:bg-gray-50">
                   <td className="p-4">
                     <img
-                      src={cat.image} // ✅ Cloudinary URL
+                      src={`/${cat.image}`}
                       alt={cat.name}
                       className="h-12 w-12 object-cover rounded"
                     />
@@ -173,7 +172,7 @@ export default function CategoryPage() {
             <div key={cat._id} className="bg-white rounded-xl shadow-lg p-4">
               <div className="flex gap-4">
                 <img
-                  src={cat.image} // ✅ Cloudinary URL
+                  src={`/${cat.image}`}
                   alt={cat.name}
                   className="h-16 w-16 object-cover rounded"
                 />
@@ -223,7 +222,7 @@ export default function CategoryPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold mb-4">
-              {isEditing ? "Edit Category" : "Add New Category"}
+              {isEditing ? 'Edit Category' : 'Add New Category'}
             </h3>
             <input
               type="text"
